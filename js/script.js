@@ -74,7 +74,7 @@ async function displayTVShows() {
       `;
 
       document.querySelector('#popular-shows').appendChild(div);
-   })
+   });
 }
 
 //Display Movie details
@@ -83,6 +83,7 @@ async function DisplayMovieDetails() {
    const movieId = window.location.search.split('=')[1];
    const movie = await fetchAPIData(`movie/${movieId}`);
 
+   // Overlay for background image
    displayBackgroundImage('movie', movie.backdrop_path);
 
    const div = document.createElement('div');
@@ -136,10 +137,74 @@ async function DisplayMovieDetails() {
       </div>
    </div>
 
-   `
-
+   `;
    document.querySelector('#movie-details').appendChild(div);
 }
+
+// Display tv shows details
+async function DisplayShowsDetails() {
+
+   const showId = window.location.search.split('=')[1];
+   const show = await fetchAPIData(`tv/${showId}`);
+
+   // Overlay for background image
+   displayBackgroundImage('tv', show.backdrop_path);
+
+   const div = document.createElement('div');
+
+   div.innerHTML = `
+      <div class="details-top">
+      <div>
+         <img
+         ${
+            show.poster_path
+            ? `<img
+            src="https://image.tmdb.org/t/p/w500${show.poster_path}"
+            class="card-img-top"
+            alt="${show.name}"
+            />`
+               : `<img
+               src="images/non-images.jpg"
+               class="card-img-top"
+               alt="${show.name}"
+            />`
+         }
+      </div>
+      <div>
+      <h2>${show.name}</h2>
+      <p>
+         <i class="fas fa-star text-primary"></i>
+         ${show.vote_average.toFixed(1)} / 10
+      </p>
+      <p class="text-muted">Last Air Date: ${show.last_air_date}</p>
+      <p>
+         ${show.overview.length >=1?show.overview
+            :"'There is no description available at the moment for this tv show'"}
+      </p>
+      <h5>Genres</h5>
+      <ul class="list-group">
+         ${show.genres.map(genre => `<li>${genre.name}</li>`).join('')}
+      </ul>
+      <a href="${show.homepage}" target="_blank" class="btn">Visit Movie Homepage</a>
+      </div>
+   </div>
+   <div class="details-bottom">
+      <h2>Show Info</h2>
+      <ul>
+      <li><span class="text-secondary">Number of episodes:</span> ${show.number_of_episodes}</li>
+      <li><span class="text-secondary">Last Episode to Air:</span>${show.last_episode_to_air.name}</li>
+      <li><span class="text-secondary">Status:</span> ${show.status}</li>
+      </ul>
+      <h4>Production Companies</h4>
+      <div class="list-group">
+      ${show.production_companies.map(productions => `<span>${productions.name}</span>`).join(', ')}
+      </div>
+   </div>
+
+   `;
+   document.querySelector('#show-details').appendChild(div);
+}
+
 
 //  Display Backdrop On details pages
 function displayBackgroundImage(types, backgroundPath) {
@@ -164,6 +229,66 @@ function displayBackgroundImage(types, backgroundPath) {
    }
 }
 
+// Display Slider Movies
+async function displaySlider() {
+   const { results } = await fetchAPIData('movie/now_playing');
+   
+   results.forEach(movie => {
+      const div = document.createElement('div');
+      div.classList.add('swiper-slide');
+
+      div.innerHTML = `
+
+      ${
+         movie.poster_path
+         ? `<a href="movie-details.html?id=${movie.id}"><img
+            src="https://image.tmdb.org/t/p/w500${movie.poster_path}"
+            class="card-img-top"
+            alt="${movie.title}"
+            /></a>
+            <h4 class="swiper-rating">
+               <i class="fas fa-star text-secondary"></i> ${movie.vote_average} / 10
+            </h4>
+         `
+            : `<img
+            src="images/non-images.jpg"
+            class="card-img-top"
+            alt="${movie.title}"
+         />
+            <h4 class="swiper-rating">
+               <i class="fas fa-star text-secondary"></i> ${movie.vote_average} / 10
+            </h4>`
+      }`;
+
+      document.querySelector('.swiper-wrapper').appendChild(div);
+      initSwiper();
+   });
+}
+
+
+function initSwiper() {
+   const swiper = new Swiper('.swiper', {
+      slidePerView:1,
+      spaceBetween: 30,
+      freeMode: true,
+      loop: true,
+      autoplay: {
+         delay: 4000,
+         disableOnInterection: false
+      },
+      breakpoints: {
+         500: {
+            slidesPerView: 2
+         },
+         700: {
+            slidesPerView: 3
+         },
+         1200: {
+            slidesPerView: 4
+         },
+      }
+   })
+}
 
 
 // Fetch data from TMDB API
@@ -216,6 +341,7 @@ function init() {
    switch(global.currentPage){
       case '/':
       case '/index.html':
+         displaySlider();
          displayPopularMovies();
          break; 
       case '/shows.html':
@@ -225,7 +351,7 @@ function init() {
          DisplayMovieDetails();
          break; 
       case '/tv-details.html':
-         console.log('tv-details')
+         DisplayShowsDetails();
          break; 
       case '/search.html':
          console.log('Search')
